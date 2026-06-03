@@ -1,91 +1,83 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
+import axios from 'axios'
 
 const AuthContext = createContext()
 
-const SAMPLE_USERS = [
-  {
-    id: 'user1',
-    email: 'demo@meditracker.com',
-    password: 'demo123',
-    name: 'Demo User',
-    avatar: '👤'
-  },
-  {
-    id: 'user2',
-    email: 'john@example.com',
-    password: 'john123',
-    name: 'John Doe',
-    avatar: '👨'
-  }
-]
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://medi-tracker-app-pro.onrender.com/api'
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const token = localStorage.getItem('authToken')
     const savedUser = localStorage.getItem('currentUser')
-    if (savedUser) {
+    
+    if (token && savedUser) {
       setUser(JSON.parse(savedUser))
     }
     setLoading(false)
   }, [])
 
-  const login = (email, password) => {
-    const foundUser = SAMPLE_USERS.find(u => u.email === email && u.password === password)
-    
-    if (foundUser) {
-      // Generate unique session ID for each login
-      const sessionId = `${foundUser.id}_${Date.now()}`
-      const userWithSession = {
-        ...foundUser,
-        sessionId,
-        originalId: foundUser.id
-      }
-      delete userWithSession.password
-      
-      setUser(userWithSession)
-      localStorage.setItem('currentUser', JSON.stringify(userWithSession))
-      toast.success(`Welcome back, ${foundUser.name}!`)
-      return true
-    }
-    
-    toast.error('Invalid email or password')
-    return false
-  }
+  const login = async (email, password) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+        email,
+        password
+      })
 
-  const signup = (name, email, password) => {
-    const existingUser = SAMPLE_USERS.find(u => u.email === email)
-    
-    if (existingUser) {
-      toast.error('Email already exists')
+      const { token, user: userData } = response.data
+      
+      // Store token and user data
+      localStorage.setItem('authToken', token)
+      localStorage.setItem('currentUser', JSON.stringify(userData))
+      
+      setUser(userData)
+      toast.success(`Welcome back, ${userData.name}!`)
+      return true
+    } catch (error) {
+      console.error('Login error:', error)
+      toast.error(error.response?.data?.message || 'Login failed')
       return false
     }
+  }
 
-    const sessionId = `user${Date.now()}`
-    const newUser = {
-      id: sessionId,
-      sessionId,
-      originalId: sessionId,
-      email,
-      name,
-      avatar: '👤'
+  const signup = async (name, email, password) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/signup`, {
+        name,
+        email,
+        password
+      })
+
+      const { token, user: userData } = response.data
+      
+      // Store token and user data
+      localStorage.setItem('authToken', token)
+      localStorage.setItem('currentUser', JSON.stringify(userData))
+      
+      setUser(userData)
+      toast.success(`Welcome, ${name}!`)
+      return true
+    } catch (error) {
+      console.error('Signup error:', error)
+      toast.error(error.response?.data?.message || 'Signup failed')
+      return false
     }
-
-    setUser(newUser)
-    localStorage.setItem('currentUser', JSON.stringify(newUser))
-    toast.success(`Welcome, ${name}!`)
-    return true
   }
 
   const logout = () => {
-    // Clear session-specific data on logout
-    if (user?.sessionId) {
-      localStorage.removeItem(`appData_${user.sessionId}`)
-    }
-    setUser(null)
+    // Clear token and user data
+    localStorage.removeItem('authToken')
     localStorage.removeItem('currentUser')
+    
+    // Clear any session-specific data
+    if (user?.id) {
+      localStorage.removeItem(`appData_${user.id}`)
+    }
+    
+    setUser(null)
     toast.success('Logged out successfully')
   }
 

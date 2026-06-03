@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import medicationRoutes from './routes/medicationRoutes.js';
 import reminderRoutes from './routes/reminderRoutes.js';
 import aiInsightsRoutes from './routes/aiInsightsRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/medications', medicationRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/ai-insights', aiInsightsRoutes);

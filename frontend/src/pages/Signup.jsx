@@ -11,10 +11,11 @@ const Signup = () => {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
   const { signup } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
     if (password !== confirmPassword) {
@@ -27,9 +28,12 @@ const Signup = () => {
       return
     }
 
-    if (signup(name, email, password)) {
+    setLoading(true)
+    const success = await signup(name, email, password)
+    if (success) {
       navigate('/')
     }
+    setLoading(false)
   }
 
   return (
@@ -133,9 +137,10 @@ const Signup = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="w-full btn-primary py-3 rounded-xl font-medium"
+              disabled={loading}
+              className="w-full btn-primary py-3 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Account
+              {loading ? 'Creating Account...' : 'Create Account'}
             </motion.button>
           </form>
         </div>

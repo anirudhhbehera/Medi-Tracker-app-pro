@@ -9,14 +9,18 @@ const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (login(email, password)) {
+    setLoading(true)
+    const success = await login(email, password)
+    if (success) {
       navigate('/')
     }
+    setLoading(false)
   }
 
   const fillDemo = () => {
@@ -91,9 +95,10 @@ const Login = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="w-full btn-primary py-3 rounded-xl font-medium"
+              disabled={loading}
+              className="w-full btn-primary py-3 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {loading ? 'Signing in...' : 'Sign In'}
             </motion.button>
           </form>
 
