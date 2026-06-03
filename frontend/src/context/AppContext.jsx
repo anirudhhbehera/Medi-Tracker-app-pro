@@ -1,6 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { useAuth } from './AuthContext'
+import { medicationAPI, reminderAPI } from '../services/api'
 
 const AppContext = createContext()
 
@@ -197,80 +198,94 @@ export const AppProvider = ({ children }) => {
     if (authUser) {
       loadDataFromAPI()
     }
-  }, [authUser?.sessionId])
+  }, [authUser?.id, authUser?.sessionId])
 
   const loadDataFromAPI = async () => {
     try {
-      const storageKey = `appData_${authUser.sessionId}`
+      const userId = authUser?.id || authUser?.sessionId
       
-      // For demo users, load fresh sample data on each new session
-      if (authUser?.originalId === 'user1' || authUser?.originalId === 'user2') {
-        const savedData = localStorage.getItem(storageKey)
-        if (savedData) {
-          // Load existing session data
-          dispatch({ type: 'LOAD_DATA', payload: JSON.parse(savedData) })
-        } else {
-          // New session - load fresh sample data
-          dispatch({ type: 'LOAD_DATA', payload: DEMO_DATA })
-          localStorage.setItem(storageKey, JSON.stringify(DEMO_DATA))
-        }
+      if (!userId) {
+        console.log('No user ID found')
         return
       }
 
-      // For other users, try API or use empty data
-      const [medsRes, remindersRes] = await Promise.all([
-        fetch(`http://localhost:8080/api/medications?userId=${authUser.sessionId}`),
-        fetch(`http://localhost:8080/api/reminders?userId=${authUser.sessionId}`)
-      ])
-      
-      if (medsRes.ok && remindersRes.ok) {
-        const medications = await medsRes.json()
-        const reminders = await remindersRes.json()
+      // Try to load from backend API
+      try {
+        const [medsRes, remindersRes] = await Promise.all([
+          medicationAPI.getAll(userId),
+          reminderAPI.getAll(userId)
+        ])
+        
+        const medications = medsRes.data || []
+        const reminders = remindersRes.data || []
+        
         dispatch({ 
           type: 'LOAD_DATA', 
           payload: { medications, reminders, adherenceData: [] }
         })
-      } else {
-        // Load from localStorage or empty
+        
+        console.log('Loaded data from API:', { medications: medications.length, reminders: reminders.length })
+        return
+      } catch (apiError) {
+        console.log('API load failed, using localStorage:', apiError.message)
+        
+        // Fallback to localStorage
+        const storageKey = `appData_${userId}`
         const savedData = localStorage.getItem(storageKey)
+        
         if (savedData) {
           dispatch({ type: 'LOAD_DATA', payload: JSON.parse(savedData) })
+          console.log('Loaded from localStorage')
         } else {
-          dispatch({ type: 'LOAD_DATA', payload: { medications: [], reminders: [], adherenceData: [] } })
+          // Load demo data for new users
+          dispatch({ type: 'LOAD_DATA', payload: DEMO_DATA })
+          localStorage.setItem(storageKey, JSON.stringify(DEMO_DATA))
+          console.log('Loaded demo data')
         }
       }
     } catch (error) {
-      console.error('Failed to load data from API:', error)
-      // Load from localStorage
-      const savedData = localStorage.getItem(`appData_${authUser.sessionId}`)
-      if (savedData) {
-        dispatch({ type: 'LOAD_DATA', payload: JSON.parse(savedData) })
-      }
+      console.error('Failed to load data:', error)
+      toast.error('Failed to load data')
     }
   }
 
-  // Save to localStorage whenever state changes
+  // Save to localStorage AND API whenever state changes
   useEffect(() => {
-    if (authUser?.sessionId && (state.medications.length > 0 || state.reminders.length > 0)) {
-      localStorage.setItem(`appData_${authUser.sessionId}`, JSON.stringify({
+    const userId = authUser?.id || authUser?.sessionId
+    if (userId && (state.medications.length > 0 || state.reminders.length > 0)) {
+      // Save to localStorage as backup
+      localStorage.setItem(`appData_${userId}`, JSON.stringify({
         medications: state.medications,
         reminders: state.reminders,
         adherenceData: state.adherenceData
       }))
+      
+      // TODO: Sync to backend API (implement batch save endpoint)
+      // This ensures data persists even if backend is down
     }
-  }, [state.medications, state.reminders, state.adherenceData, authUser?.sessionId])
+  }, [state.medications, state.reminders, state.adherenceData, authUser])
 
 
 
   const addMedication = async (medication) => {
     try {
+      const userId = authUser?.id || authUser?.sessionId
       const newMed = {
-        id: Date.now(),
         ...medication,
-        userId: authUser.sessionId,
+        userId,
         createdAt: new Date().toISOString(),
         color: medication.color || `bg-${['blue', 'green', 'purple', 'pink', 'indigo'][Math.floor(Math.random() * 5)]}-500`
       }
+      
+      // Try to save to backend
+      try {
+        const response = await medicationAPI.create(newMed)
+        newMed.id = response.data._id || response.data.id || Date.now()
+      } catch (apiError) {
+        console.log('API save failed, using local ID:', apiError.message)
+        newMed.id = Date.now()
+      }
+      
       dispatch({ type: 'ADD_MEDICATION', payload: newMed })
       toast.success('Medication added successfully!')
     } catch (error) {
@@ -280,6 +295,15 @@ export const AppProvider = ({ children }) => {
 
   const updateMedication = async (id, updates) => {
     try {
+      const userId = authUser?.id || authUser?.sessionId
+      
+      // Try to update on backend
+      try {
+        await medicationAPI.update(id, updates, userId)
+      } catch (apiError) {
+        console.log('API update failed, updating locally:', apiError.message)
+      }
+      
       dispatch({ type: 'UPDATE_MEDICATION', payload: { id, ...updates } })
       toast.success('Medication updated!')
     } catch (error) {
@@ -289,6 +313,15 @@ export const AppProvider = ({ children }) => {
 
   const deleteMedication = async (id) => {
     try {
+      const userId = authUser?.id || authUser?.sessionId
+      
+      // Try to delete from backend
+      try {
+        await medicationAPI.delete(id, userId)
+      } catch (apiError) {
+        console.log('API delete failed, deleting locally:', apiError.message)
+      }
+      
       dispatch({ type: 'DELETE_MEDICATION', payload: id })
       toast.success('Medication deleted!')
     } catch (error) {
@@ -298,13 +331,23 @@ export const AppProvider = ({ children }) => {
 
   const addReminder = async (reminder) => {
     try {
+      const userId = authUser?.id || authUser?.sessionId
       const newReminder = {
-        id: Date.now(),
         ...reminder,
-        userId: authUser.sessionId,
+        userId,
         enabled: true,
         createdAt: new Date().toISOString()
       }
+      
+      // Try to save to backend
+      try {
+        const response = await reminderAPI.create(newReminder)
+        newReminder.id = response.data._id || response.data.id || Date.now()
+      } catch (apiError) {
+        console.log('API save failed, using local ID:', apiError.message)
+        newReminder.id = Date.now()
+      }
+      
       dispatch({ type: 'ADD_REMINDER', payload: newReminder })
       toast.success('Reminder added!')
     } catch (error) {
@@ -314,6 +357,15 @@ export const AppProvider = ({ children }) => {
 
   const updateReminder = async (id, updates) => {
     try {
+      const userId = authUser?.id || authUser?.sessionId
+      
+      // Try to update on backend
+      try {
+        await reminderAPI.update(id, updates, userId)
+      } catch (apiError) {
+        console.log('API update failed, updating locally:', apiError.message)
+      }
+      
       dispatch({ type: 'UPDATE_REMINDER', payload: { id, ...updates } })
       toast.success('Reminder updated!')
     } catch (error) {
@@ -323,6 +375,15 @@ export const AppProvider = ({ children }) => {
 
   const deleteReminder = async (id) => {
     try {
+      const userId = authUser?.id || authUser?.sessionId
+      
+      // Try to delete from backend
+      try {
+        await reminderAPI.delete(id, userId)
+      } catch (apiError) {
+        console.log('API delete failed, deleting locally:', apiError.message)
+      }
+      
       dispatch({ type: 'DELETE_REMINDER', payload: id })
       toast.success('Reminder deleted!')
     } catch (error) {
