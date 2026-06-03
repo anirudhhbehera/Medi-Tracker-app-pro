@@ -185,9 +185,6 @@ mvn clean package
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -196,11 +193,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Framer Motion for smooth animations
 - Tailwind CSS for rapid styling
 - Spring Boot community for excellent documentation
-
-## 📞 Support
-
-For support, email support@meditracker.com or join our Slack channel.
-
----
-
-**Built with ❤️ for better healthcare management**
