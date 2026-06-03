@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Insights Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .insight {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .chat-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .user-message {
+            background: rgba(59, 130, 246, 0.3);
+            text-align: right;
+        }
+        .ai-message {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+        }
+        input {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            width: 70%;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .loading {
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧠 AI Health Insights Test</h1>
+    <div style="background: rgba(0,255,0,0.1); padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+        <h3>✅ Fixed Issues:</h3>
+        <ul>
+            <li>Gemini API: Updated to correct model (gemini-pro)</li>
+            <li>CORS Issue: Added backend proxy for secondary AI</li>
+            <li>Fallback System: Enhanced personalized responses</li>
+        </ul>
+    </div>
+    
+    <div>
+        <h2>✨ Smart Insights</h2>
+        <button onclick="loadInsights()">Load Insights</button>
+        <button onclick="refreshInsights()">Refresh Insights</button>
+        <div id="insights-container"></div>
+    </div>
+    
+    <div class="chat-container">
+        <h2>💬 AI Health Assistant</h2>
+        <div style="margin-bottom: 15px;">
+            <h3>Try these personalized questions:</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                <button onclick="askQuestion('Can I take Vitamin C with Vitamin D?')" style="padding: 5px 10px; font-size: 12px;">Drug Interactions</button>
+                <button onclick="askQuestion('When should I take my blood pressure medication?')" style="padding: 5px 10px; font-size: 12px;">Timing Advice</button>
+                <button onclick="askQuestion('Which medications need refilling?')" style="padding: 5px 10px; font-size: 12px;">Stock Check</button>
+                <button onclick="askQuestion('Tell me about my Vitamin D')" style="padding: 5px 10px; font-size: 12px;">Med Info</button>
+            </div>
+        </div>
+        <div id="chat-messages"></div>
+        <div>
+            <input type="text" id="message-input" placeholder="Ask about your medications, interactions, timing..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        const userId = 'user123';
+        let isLoading = false;
+
+        // Sample user data for testing
+        const sampleUserData = {
+            medications: [
+                { id: '1', name: 'Aspirin', dosage: '100mg', frequency: 'Daily', stock: 30 },
+                { id: '2', name: 'Vitamin D', dosage: '1000 IU', frequency: 'Daily', stock: 5 },
+                { id: '3', name: 'Blood Pressure Med', dosage: '10mg', frequency: 'Twice Daily', stock: 15 },
+                { id: '4', name: 'Vitamin C', dosage: '500mg', frequency: 'Daily', stock: 20 }
+            ],
+            reminders: [
+                { medicationId: '1', time: '08:00' },
+                { medicationId: '2', time: '08:00' },
+                { medicationId: '3', time: '08:00' },
+                { medicationId: '3', time: '20:00' },
+                { medicationId: '4', time: '08:00' }
+            ]
+        };
+
+        // Enhanced personalized responses
+        function getPersonalizedResponse(message) {
+            const lowerMessage = message.toLowerCase();
+            const userMeds = sampleUserData.medications.map(m => ({ name: m.name.toLowerCase(), original: m.name, dosage: m.dosage, frequency: m.frequency, stock: m.stock }));
+            
+            // Drug interaction analysis
+            if (lowerMessage.includes('take') && (lowerMessage.includes('with') || lowerMessage.includes('together'))) {
+                const vitaminPattern = /vitamin\s*([a-z]|\d+)/gi;
+                const mentionedVitamins = message.match(vitaminPattern) || [];
+                
+                if (mentionedVitamins.length >= 2) {
+                    const userVitamins = userMeds.filter(m => m.name.includes('vitamin'));
+                    let advice = `Regarding ${mentionedVitamins.join(' and ')}: `;
+                    
+                    if (userVitamins.length > 0) {
+                        advice += `I see you're already taking ${userVitamins.map(v => v.original).join(', ')}. `;
+                    }
+                    
+                    if (lowerMessage.includes('vitamin c') && lowerMessage.includes('vitamin d')) {
+                        advice += 'Vitamin C and D can be taken together safely. Both are water-soluble and complement each other. ';
+                    }
+                    
+                    advice += 'Based on your current 8:00 AM schedule, you can take them together. Always consult your healthcare provider for personalized advice.';
+                    return advice;
+                }
+            }
+            
+            // Timing optimization
+            if (lowerMessage.includes('when') || lowerMessage.includes('time')) {
+                return `Based on your current schedule, you take most medications at 8:00 AM: ${sampleUserData.medications.filter(m => m.name !== 'Blood Pressure Med').map(m => m.name).join(', ')}. Your Blood Pressure Med is taken twice daily (8:00 AM and 8:00 PM). This spacing helps maintain steady medication levels.`;
+            }
+            
+            // Stock management
+            const lowStock = userMeds.filter(m => m.stock <= 7);
+            if (lowerMessage.includes('stock') || lowerMessage.includes('refill')) {
+                if (lowStock.length > 0) {
+                    return `⚠️ Low stock alert: ${lowStock.map(m => `${m.original} (${m.stock} left)`).join(', ')}. Recommend refilling within 2-3 days to avoid missing doses.`;
+                }
+                return 'Your medications are well-stocked! Great job staying organized.';
+            }
+            
+            // Medication-specific advice
+            const mentionedMed = userMeds.find(m => lowerMessage.includes(m.name));
+            if (mentionedMed) {
+                return `Regarding your ${mentionedMed.original} (${mentionedMed.dosage}): This medication is taken ${mentionedMed.frequency.toLowerCase()}. You currently have ${mentionedMed.stock} tablets remaining. Always follow your healthcare provider's instructions.`;
+            }
+            
+            return "I'm here to help with your medication management. You can ask about drug interactions, timing, stock levels, or specific medications you're taking. For medical concerns, always consult your healthcare provider.";
+        }
+
+        async function loadInsights() {
+            try {
+                const response = await fetch(`${API_BASE}/ai-insights/${userId}`);
+                const insights = await response.json();
+                displayInsights(insights);
+            } catch (error) {
+                console.error('Error loading insights:', error);
+                document.getElementById('insights-container').innerHTML = '<p>Unable to load insights. Please make sure the backend is running.</p>';
+            }
+        }
+
+        async function refreshInsights() {
+            try {
+                const response = await fetch(`${API_BASE}/ai-insights/${userId}/refresh`, {
+                    method: 'POST'
+                });
+                const insights = await response.json();
+                displayInsights(insights);
+                alert('Insights refreshed!');
+            } catch (error) {
+                console.error('Error refreshing insights:', error);
+                alert('Unable to refresh insights. Please make sure the backend is running.');
+            }
+        }
+
+        function displayInsights(insights) {
+            const container = document.getElementById('insights-container');
+            if (insights.length === 0) {
+                container.innerHTML = '<p>No insights available. Make sure you have medication data.</p>';
+                return;
+            }
+            
+            container.innerHTML = insights.map(insight => `
+                <div class="insight">
+                    <h3>${insight.title}</h3>
+                    <p>${insight.description}</p>
+                    <small>Type: ${insight.type}</small>
+                </div>
+            `).join('');
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            if (!message || isLoading) return;
+
+            addMessage(message, 'user');
+            input.value = '';
+            isLoading = true;
+
+            // Try Puter.js first, then personalized fallback
+            if (window.puter && window.puter.ai) {
+                const userMeds = `Medications: ${sampleUserData.medications.map(m => `${m.name} (${m.dosage}, ${m.frequency}, stock: ${m.stock})`).join(', ')}`;
+                window.puter.ai.chat(`You are a medical AI assistant. User's ${userMeds}. User asks: "${message}". Provide personalized advice.`).then(response => {
+                    const text = response?.result?.message?.content || response?.message?.content || response?.text || 'No response';
+                    addMessage(text, 'ai');
+                    isLoading = false;
+                }).catch(() => {
+                    const response = getPersonalizedResponse(message);
+                    addMessage(response, 'ai');
+                    isLoading = false;
+                });
+            } else {
+                setTimeout(() => {
+                    const response = getPersonalizedResponse(message);
+                    addMessage(response, 'ai');
+                    isLoading = false;
+                }, 1000);
+            }
+        }
+
+        function addMessage(text, sender) {
+            const container = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.innerHTML = `
+                <p>${text}</p>
+                <small>${new Date().toLocaleTimeString()}</small>
+            `;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function askQuestion(question) {
+            document.getElementById('message-input').value = question;
+            sendMessage();
+        }
+
+        // Load Puter.js and insights on page load
+        window.onload = function() {
+            // Load Puter.js
+            const script = document.createElement('script');
+            script.src = 'https://js.puter.com/v2/';
+            script.async = true;
+            script.onload = () => console.log('Puter.js loaded - unlimited AI available!');
+            document.head.appendChild(script);
+            
+            loadInsights();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: medication-tracker-backend
+  data:
+    mongodb: 
+      uri: mongodb+srv://anirudhhbehera_db_user:anirudhh@cluster0.acprjbu.mongodb.net/?appName=Cluster0
+      database: medication_tracker
+  security:
+    user:
+      name: admin
+      password: admin
+  
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+logging:
+  level:
+    com.meditracker: DEBUG
+    org.springframework.security: DEBUG 
+    org.springframework.web: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+ai:
+  api:
+    url: https://api.openai.com/v1/chat/completions
+    key: ${AI_API_KEY:your-api-key-here}

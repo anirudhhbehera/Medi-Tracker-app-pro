@@ -1,0 +1,284 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  color: #1f2937;
+  min-height: 100vh;
+  transition: all 0.3s ease;
+}
+
+body.light {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #1f2937;
+}
+
+body.dark {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #f8fafc;
+}
+
+.card-bg {
+  transition: all 0.3s ease;
+}
+
+.light .card-bg {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.dark .card-bg {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4);
+}
+
+.text-primary {
+  color: #1f2937;
+}
+
+.dark .text-primary {
+  color: #f8fafc;
+}
+
+.text-secondary {
+  color: #64748b;
+}
+
+.dark .text-secondary {
+  color: #94a3b8;
+}
+
+.border-primary {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark .border-primary {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.bg-input {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #1f2937;
+}
+
+.dark .bg-input {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f8fafc;
+}
+
+.bg-input::placeholder {
+  color: #64748b;
+}
+
+.dark .bg-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Light theme specific colors */
+.light .text-blue-600 {
+  color: #2563eb;
+}
+
+.light .text-green-600 {
+  color: #16a34a;
+}
+
+.light .text-red-500 {
+  color: #ef4444;
+}
+
+.light .text-yellow-600 {
+  color: #ca8a04;
+}
+
+/* Button hover states */
+.light .hover\:bg-gray-100:hover {
+  background-color: #f3f4f6;
+}
+
+.light .hover\:bg-gray-200:hover {
+  background-color: #e5e7eb;
+}
+
+.light .hover\:bg-blue-200:hover {
+  background-color: #dbeafe;
+}
+
+.light .hover\:bg-red-100:hover {
+  background-color: #fee2e2;
+}
+
+.light .hover\:bg-green-200:hover {
+  background-color: #dcfce7;
+}
+
+/* Background colors for light theme */
+.light .bg-green-50 {
+  background-color: #f0fdf4;
+}
+
+.light .bg-gray-50 {
+  background-color: #f9fafb;
+}
+
+.light .bg-blue-100 {
+  background-color: #dbeafe;
+}
+
+.light .bg-green-100 {
+  background-color: #dcfce7;
+}
+
+.light .bg-red-100 {
+  background-color: #fee2e2;
+}
+
+/* Border colors for light theme */
+.light .border-green-200 {
+  border-color: #bbf7d0;
+}
+
+.light .border-gray-200 {
+  border-color: #e5e7eb;
+}
+
+/* Time input styling */
+input[type="time"] {
+  color-scheme: light dark;
+}
+
+.light input[type="time"] {
+  color-scheme: light;
+}
+
+.dark input[type="time"] {
+  color-scheme: dark;
+}
+
+/* Modal height constraints */
+.modal-content {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Scrollbar styling for modal */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+.dark .modal-content::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+}
+
+/* Glass effect for reminder cards */
+.glass-effect {
+  transition: all 0.3s ease;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.light .glass-effect {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Text colors for glass effect cards */
+.light .glass-effect .text-white {
+  color: #1f2937 !important;
+}
+
+.light .glass-effect .text-white\/60,
+.light .glass-effect .text-white\/70 {
+  color: #64748b !important;
+}
+
+.light .glass-effect .text-blue-300 {
+  color: #2563eb !important;
+}
+
+.light .glass-effect .text-green-400 {
+  color: #16a34a !important;
+}
+
+.light .glass-effect .text-red-400 {
+  color: #ef4444 !important;
+}
+
+.light .glass-effect .text-blue-400 {
+  color: #3b82f6 !important;
+}
+
+.light .glass-effect .text-gray-400 {
+  color: #9ca3af !important;
+}
+
+/* Ensure border-left colors work with glass-effect */
+.glass-effect.border-l-4 {
+  border-left-width: 4px !important;
+}
+
+.glass-effect.border-l-green-500 {
+  border-left-color: #22c55e !important;
+}
+
+.glass-effect.border-l-gray-500 {
+  border-left-color: #6b7280 !important;
+}
